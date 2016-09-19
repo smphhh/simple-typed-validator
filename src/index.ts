@@ -1,5 +1,6 @@
 
 export {
     createParameterParser,
-    QueryParser
+    QueryParser,
+    ParameterParserError
 } from './core';
