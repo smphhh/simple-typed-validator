@@ -3,6 +3,7 @@ import * as chai from 'chai';
 
 import {
     createParameterParser,
+    ParameterParserError,
     QueryParser
 } from '../';
 
@@ -59,12 +60,13 @@ describe("Simple Typed Query", function () {
 
     });
 
-    /*it("", function () {
-        //throw new Error("Hi");
+    it("should error on missing required parameter", function () {
+        expect(() => {
+            let parsedValue = createParameterParser({}, 'value')
+                .asString()
+                .require()
+                .getValue();
 
-        createParameterParser({ value: 'a' }, 'value')
-            .asNumber()
-            .require();
-    });*/
-
+        }).to.throw(ParameterParserError);
+    });
 });

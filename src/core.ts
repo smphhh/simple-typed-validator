@@ -35,7 +35,16 @@ export class EnumApiParameter<EnumValueType extends number, EnumType> {
     }
 }
 
-export class ParameterParserError extends Error {
+export class CustomError extends Error {
+    constructor(message) {
+        super();
+        this.message = message;
+        this.stack = (new Error()).stack;
+        this.name = (this.constructor as any).name;
+    }
+}
+
+export class ParameterParserError extends CustomError {
     constructor(message: string) {
         super(message);
     }
