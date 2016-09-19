@@ -59,12 +59,12 @@ describe("Simple Typed Query", function () {
 
     });
 
-    it("", function () {
+    /*it("", function () {
         //throw new Error("Hi");
 
         createParameterParser({ value: 'a' }, 'value')
             .asNumber()
             .require();
-    });
+    });*/
 
 });

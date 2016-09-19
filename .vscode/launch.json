@@ -6,7 +6,7 @@
 			"type": "node",
 			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
 			"stopOnEntry": false,
-			"args": ["--no-timouts" ,"lib/**/__tests__/**/*.js"],
+			"args": ["--no-timeouts" ,"lib/**/__tests__/**/*.js"],
 			"cwd": "${workspaceRoot}",
 			"preLaunchTask": "build",
 			"request": "launch",
