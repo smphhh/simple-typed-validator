@@ -51,7 +51,7 @@ export class ParameterParserError extends CustomError {
 }
 
 export interface QueryParameterInterface<ValueType> {
-    require(): this;
+    optional(): this;
     asNumber(): QueryParameterInterface<number>;
     asDate(): QueryParameterInterface<Date>;
     asString(): QueryParameterInterface<string>;
@@ -63,7 +63,7 @@ export interface QueryParameterInterface<ValueType> {
 }
 
 export interface TypedQueryParameterInterface<ValueType> {
-    require(): this;
+    optional(): this;
     defaultValue(value: ValueType): this;
     predicate(predicateFunction: (value: ValueType) => boolean, errorMessage: string): this;
     getValue(): ValueType;
@@ -85,7 +85,7 @@ export class BaseQueryParameter {
 }
 
 export class RawQueryParameter extends BaseQueryParameter implements RawQueryParameterInterface {
-    constructor(parameterName: string, private value: string) {
+    constructor(parameterName: string, private value: any) {
         super(parameterName);
 
         if (value === undefined) {
@@ -94,51 +94,85 @@ export class RawQueryParameter extends BaseQueryParameter implements RawQueryPar
     }
 
     asNumber() {
-        let numberValue = Number(this.value);
-        if (isFinite(numberValue)) {
-            return this.createTypedQueryParameter(numberValue);
-        } else {
-            throw this.makeError(`Cannot parse value ${this.value} as number`);
+        switch (typeof this.value) {
+            case 'number':
+                return this.createTypedQueryParameter<number>(this.value);
+
+            case 'string':
+                let numberValue = Number(this.value);
+                if (isFinite(numberValue)) {
+                    return this.createTypedQueryParameter(numberValue);
+                } else {
+                    throw this.makeError(`Cannot parse string ${this.value} as number`);
+                }
+
+            default:
+                throw this.makeError(`Cannot parse value of type ${typeof this.value} as number`);
         }
     }
 
     asDate() {
-        let dateValue = new Date(this.value);
-        if (isFinite(dateValue.valueOf())) {
-            return this.createTypedQueryParameter(dateValue);
-        } else {
-            throw this.makeError(`Cannot parse value ${this.value} as Date`);
+        switch (typeof this.value) {
+            case 'number':
+            case 'string':
+                let dateValue = new Date(this.value);
+                if (isFinite(dateValue.valueOf())) {
+                    return this.createTypedQueryParameter(dateValue);
+                } else {
+                    throw this.makeError(`Cannot parse value ${this.value} as Date`);
+                }
+
+            default:
+                throw this.makeError(`Cannot parse value of type ${typeof this.value} as Date`);
         }
     }
 
     asString() {
-        return this.createTypedQueryParameter(this.value);
+        switch (typeof this.value) {
+            case 'string':
+                return this.createTypedQueryParameter(this.value === null ? null : this.value.toString());
+
+            default:
+                throw this.makeError(`Cannot parse value of type ${typeof this.value} as string`);
+        }
     }
 
     asBoolean() {
-        let value = this.value.toLowerCase();
-        
-        if (value === 'true') {
-            return this.createTypedQueryParameter(true);
-        } else if (value === 'false') {
-            return this.createTypedQueryParameter(false);
-        } else {
-            throw this.makeError(`Cannot parse string ${value} as boolean`);
+        switch (typeof this.value) {
+            case 'boolean':
+                return this.createTypedQueryParameter(this.value as boolean);
+
+            case 'string':
+                let value = this.value.toLowerCase();
+
+                if (value === 'true') {
+                    return this.createTypedQueryParameter(true);
+                } else if (value === 'false') {
+                    return this.createTypedQueryParameter(false);
+                } else {
+                    throw this.makeError(`Cannot parse string ${value} as boolean`);
+                }
+
+            default:
+                throw this.makeError(`Cannot parse value of type ${typeof this.value} as boolean`);
         }
     }
-    
+
     private createTypedQueryParameter<ValueType>(value: ValueType) {
         return new TypedQueryParameter(this.parameterName, value);
     }
 }
 
 export class UndefinedQueryParameter<ValueType> extends BaseQueryParameter implements QueryParameterInterface<ValueType> {
+    private isOptional = false;
+
     constructor(parameterName: string) {
         super(parameterName);
     }
 
-    require(): this {
-        throw this.makeError("Required parameter is missing") as any;
+    optional() {
+        this.isOptional = true;
+        return this;
     }
 
     asNumber() {
@@ -162,6 +196,7 @@ export class UndefinedQueryParameter<ValueType> extends BaseQueryParameter imple
     }
 
     defaultValue(value: ValueType) {
+        this.isOptional = true;
         return new QueryParameter(value, this.parameterName);
     }
 
@@ -170,7 +205,11 @@ export class UndefinedQueryParameter<ValueType> extends BaseQueryParameter imple
     }
 
     getValue(): ValueType {
-        return undefined;
+        if (this.isOptional) {
+            return undefined;
+        } else {
+            throw this.makeError("Required parameter is missing") as any;
+        }
     }
 }
 
@@ -183,7 +222,7 @@ export class QueryParameter<ValueType> extends BaseQueryParameter implements Que
         }
     }
 
-    require() {
+    optional() {
         return this;
     }
 
@@ -270,7 +309,7 @@ export class TypedQueryParameter<ValueType> extends BaseQueryParameter implement
         }
     }
 
-    require() {
+    optional() {
         return this;
     }
 
@@ -295,10 +334,8 @@ export function createParameterParser(queryParams: any, parameterName: string): 
     let value = queryParams[parameterName];
     if (value === undefined) {
         return new UndefinedQueryParameter(parameterName);
-    } else if (typeof value === 'string') {
-        return new RawQueryParameter(parameterName, value);
     } else {
-        throw new Error("Raw value must be either undefined or of type string");
+        return new RawQueryParameter(parameterName, value);
     }
 }
 
