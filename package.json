@@ -1,14 +1,16 @@
 {
   "name": "simple-typed-validator",
-  "version": "0.1.1",
-  "description": "Simple query parameter parsing and validation for TypeScript",
+  "version": "0.2.0",
+  "description": "Data validation and parsing for TypeScript",
   "license": "MIT",
   "keywords": [
     "typescript",
     "query",
     "url",
     "rest",
-    "api"
+    "api",
+    "deserialization",
+    "validation"
   ],
   "repository": {
     "type": "git",
